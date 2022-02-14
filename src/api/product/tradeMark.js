@@ -28,3 +28,12 @@ export function updateBaseTrademark(data) {
         data: data
     })
 }
+
+//删除品牌
+// DELETE /admin/product/baseTrademark/remove/{id}
+export function removeBaseTrademark({ id }) {
+    return request({
+        url: `/admin/product/baseTrademark/remove/${id}`,
+        method: 'delete'
+    })
+}

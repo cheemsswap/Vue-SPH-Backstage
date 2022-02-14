@@ -709,4 +709,265 @@
         }
 ```
 
+### 第二十步:添加API  产品管理-品牌管理  -> 修改品牌
+
+```bash
+    ---api
+        ---product
+            ---tradeMark.js
+        //修改品牌
+        //PUT /admin/product/baseTrademark/update
+        export function updateBaseTrademark(data) {
+            return request({
+                url: `/admin/product/baseTrademark/update`,
+                method: 'put',
+                data: data
+            })
+        }
+```
+### 第二十一步:产品管理->品牌管理 使用Vux修改品牌信息
+
+```bash
+    ---store
+        ---product
+            ---tradeMark.js
+        核心代码:
+        updateBaseTrademark({ commit }, { id, tmName, logoUrl }) {
+            return new Promise((resolve, reject) => {
+                updateBaseTrademark({ id, tmName, logoUrl }).then(response => {
+                    resolve(response)
+                }).catch(error => {
+                    reject(error)
+                })
+            })
+        },
+```
+
+### 第二十二步:产品管理->品牌管理 新增品牌的确认校验
+
+```bash
+    ---views
+        ---product
+            ---tradeMark
+                ---index.vue
+        核心代码:
+        data() {
+            const validatetmName = (rule, value, callback) => {
+                if (!(value && value.length > 0 && value.length < 12)) {
+                    callback(new Error("品牌名称介于1~12个字符"));
+                } else {
+                    callback();
+                }
+            };
+            const validateimageUrl = (rule, value, callback) => {
+                if (!(value && value.substr(value.lastIndexOf(".") + 1) == "jpg")) {
+                    callback(new Error("请上传有效图片"));
+                } else {
+                    callback();
+                }
+            };
+            return {
+                FormRules: {
+                    tmName: [
+                        { required: true, trigger: "change", validator: validatetmName },
+                    ],
+                    imageUrl: [
+                        { required: true, trigger: "change", validator: validateimageUrl },
+                    ],
+                },
+            };
+        }
+        methdos:{
+            saveTradeMark() {
+                this.$refs.Form.validate((valid) => {
+                    if (valid) {
+                        ...
+                    }
+            }
+        }
+```
+### 第二十三步:产品管理->品牌管理 修改品牌
+
+```bash
+    ---views
+        ---product
+            ---tradeMark
+                ---index.vue
+        核心代码:
+        <el-table-column prop="address" label="操作" align="center">
+            <template slot-scope="scope">
+                <el-button
+                type="warning"
+                icon="el-icon-edit"
+                size="mini"
+                @click="updateTradeMark(scope.row)"
+                >
+                    {{ innerWidth > 660 ? "修改" : "" }}
+                </el-button>
+                <el-button type="danger" icon="el-icon-delete" size="mini">
+                    {{ innerWidth > 660 ? "删除" : "" }}
+                </el-button>
+            </template>
+        </el-table-column>
+
+        methods:{
+            updateTradeMark({ id, logoUrl, tmName }) {
+                this.$refs.Form && this.$refs.Form.resetFields();
+                this.form = {
+                ...this.form,
+                title: "修改品牌",
+                dialogFormVisible: true,
+                id,
+                imageUrl: logoUrl,
+                tmName,
+                };
+            },
+            saveTradeMark() {
+                this.$refs.Form.validate((valid) => {
+                    if (valid) {
+                        if (this.form.id != "") {
+                            this.$store.dispatch("trademark/updateBaseTrademark", {
+                                id: this.form.id,
+                                tmName: this.form.tmName,
+                                logoUrl: this.form.imageUrl || "",
+                            })
+                            .then((data) => {
+                                this.clearTradeMark();
+                                this.$message({
+                                    message: "修改成功",
+                                    type: "success",
+                                });
+                                this.getData();
+                            })
+                            .catch((error) => {
+                                this.$message({
+                                    message: "修改失败",
+                                    type: "error",
+                                });
+                            });
+                        } else {
+                            this.$store.dispatch("trademark/addBaseTrademark", {
+                                tmName: this.form.tmName,
+                                logoUrl: this.form.imageUrl || "",
+                            })
+                            .then((data) => {
+                                this.clearTradeMark();
+                                this.$message({
+                                message: "添加成功",
+                                type: "success",
+                                });
+                                this.getData();
+                            })
+                            .catch((error) => {
+                                this.$message({
+                                message: "添加失败",
+                                type: "error",
+                                });
+                            });
+                        }
+                    }
+                });
+            },
+        }
+
+```
+### 第二十四步:添加API  产品管理-品牌管理  -> 删除品牌
+
+```bash
+    ---api
+        ---product
+            ---tradeMark.js
+        //删除品牌
+        // DELETE /admin/product/baseTrademark/remove/{id}
+        export function removeBaseTrademark({ id }) {
+            return request({
+                url: `/admin/product/baseTrademark/remove/${id}`,
+                method: 'delete'
+            })
+        }
+```
+### 第二十五步:产品管理->品牌管理 使用Vux删除品牌信息
+
+```bash
+    ---store
+        ---product
+            ---tradeMark.js
+        核心代码:
+        removeBaseTrademark({ commit }, { id }) {
+            return new Promise((resolve, reject) => {
+                removeBaseTrademark({ id }).then(response => {
+                    resolve(response)
+                }).catch(error => {
+                    reject(error)
+                })
+            })
+        }
+```
+
+### 第二十六步:产品管理->品牌管理 删除品牌
+
+```bash
+    ---view
+        ---product
+            ---tradeMark
+                ---index.vue
+        核心代码:
+        <el-button
+        @click="removeTradeMark(scope.row)"
+        type="danger"
+        icon="el-icon-delete"
+        size="mini"
+        >
+            {{ innerWidth > 660 ? "删除" : "" }}
+        </el-button>
+
+        methods:{
+            removeTradeMark({ id, tmName }) {
+                this.$confirm(
+                    `此操作将永久删除"${tmName}"品牌信息, 是否继续?`,
+                    "删除确认",
+                    {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning",
+                    }
+                )
+                .then(() => {
+                    this.$store
+                        .dispatch("trademark/removeBaseTrademark", { id })
+                        .then((data) => {
+                        this.$message({
+                            type: "success",
+                            message: "删除成功!",
+                        });
+                        if (
+                            this.tableData.length <= 1 &&
+                            this.currentPageData.currentPage >= 2
+                        )
+                            this.currentPageData.currentPage -= 1;
+                        this.getData();
+                        })
+                        .catch((error) => {
+                        this.$message({
+                            message: `删除失败`,
+                            type: "error",
+                        });
+                        });
+                    })
+                .catch(() => {
+                    this.$message({
+                        type: "info",
+                        message: "已取消删除",
+                    });
+                });
+            },
+        }
+```
+
+
+
+
+
+
+
 

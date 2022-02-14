@@ -25,16 +25,21 @@
         </template>
       </el-table-column>
       <el-table-column prop="address" label="操作" align="center">
-        <template>
+        <template slot-scope="scope">
           <el-button
             type="warning"
             icon="el-icon-edit"
             size="mini"
-            @click="updateTradeMark()"
+            @click="updateTradeMark(scope.row)"
           >
             {{ innerWidth > 660 ? "修改" : "" }}
           </el-button>
-          <el-button type="danger" icon="el-icon-delete" size="mini">
+          <el-button
+            @click="removeTradeMark(scope.row)"
+            type="danger"
+            icon="el-icon-delete"
+            size="mini"
+          >
             {{ innerWidth > 660 ? "删除" : "" }}
           </el-button>
         </template>
@@ -54,7 +59,7 @@
     </el-pagination>
 
     <el-dialog :title="form.title" :visible.sync="form.dialogFormVisible">
-      <el-form :model="form">
+      <el-form :model="form" ref="Form" :rules="FormRules">
         <el-form-item label="序号" :label-width="form.formLabelWidth">
           <el-input
             v-model="form.id"
@@ -62,10 +67,18 @@
             :disabled="true"
           ></el-input>
         </el-form-item>
-        <el-form-item label="品牌名称" :label-width="form.formLabelWidth">
+        <el-form-item
+          prop="tmName"
+          label="品牌名称"
+          :label-width="form.formLabelWidth"
+        >
           <el-input v-model="form.tmName" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item label="Logo" :label-width="form.formLabelWidth">
+        <el-form-item
+          prop="imageUrl"
+          label="Logo"
+          :label-width="form.formLabelWidth"
+        >
           <el-upload
             class="avatar-uploader"
             :action="form.action"
@@ -90,6 +103,20 @@
 export default {
   name: "tradeMark",
   data() {
+    const validatetmName = (rule, value, callback) => {
+      if (!(value && value.length > 0 && value.length < 12)) {
+        callback(new Error("品牌名称介于1~12个字符"));
+      } else {
+        callback();
+      }
+    };
+    const validateimageUrl = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error("请上传有效图片"));
+      } else {
+        callback();
+      }
+    };
     return {
       //用于判断是否展示 修改和删除按钮上的文字
       innerWidth: this.getInnerWidth(),
@@ -113,6 +140,14 @@ export default {
         tmName: "",
         action: process.env.VUE_APP_BASE_API + "/admin/product/fileUpload",
         imageUrl: "",
+      },
+      FormRules: {
+        tmName: [
+          { required: true, trigger: "change", validator: validatetmName },
+        ],
+        imageUrl: [
+          { required: true, trigger: "change", validator: validateimageUrl },
+        ],
       },
     };
   },
@@ -177,30 +212,119 @@ export default {
         });
     },
     addTradeMark() {
-      this.form.title = "新增品牌";
-      this.form.dialogFormVisible = true;
+      this.$refs.Form && this.$refs.Form.resetFields();
+      this.form = {
+        ...this.form,
+        title: "新增品牌",
+        dialogFormVisible: true,
+        id: "",
+        imageUrl: "",
+        tmName: "",
+      };
     },
-    updateTradeMark() {
-      this.form.title = "修改品牌";
-      this.form.dialogFormVisible = true;
+    updateTradeMark({ id, logoUrl, tmName }) {
+      this.$refs.Form && this.$refs.Form.resetFields();
+      this.form = {
+        ...this.form,
+        title: "修改品牌",
+        dialogFormVisible: true,
+        id,
+        imageUrl: logoUrl,
+        tmName,
+      };
     },
-    saveTradeMark() {
-      this.$store
-        .dispatch("trademark/addBaseTrademark", {
-          tmName: this.form.tmName,
-          logoUrl: this.form.imageUrl || "",
+    removeTradeMark({ id, tmName }) {
+      this.$confirm(
+        `此操作将永久删除"${tmName}"品牌信息, 是否继续?`,
+        "删除确认",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      )
+        .then(() => {
+          this.$store
+            .dispatch("trademark/removeBaseTrademark", { id })
+            .then((data) => {
+              this.$message({
+                type: "success",
+                message: "删除成功!",
+              });
+              if (
+                this.tableData.length <= 1 &&
+                this.currentPageData.currentPage >= 2
+              )
+                this.currentPageData.currentPage -= 1;
+              this.getData();
+            })
+            .catch((error) => {
+              this.$message({
+                message: `删除失败`,
+                type: "error",
+              });
+            });
         })
-        .then((data) => {
-          this.clearTradeMark();
-          this.getData();
-        })
-        .catch((error) => {
-          console.log("失败");
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
         });
     },
+    saveTradeMark() {
+      this.$refs.Form.validate((valid) => {
+        if (valid) {
+          if (this.form.id != "") {
+            this.$store
+              .dispatch("trademark/updateBaseTrademark", {
+                id: this.form.id,
+                tmName: this.form.tmName,
+                logoUrl: this.form.imageUrl || "",
+              })
+              .then((data) => {
+                this.clearTradeMark();
+                this.$message({
+                  message: "修改成功",
+                  type: "success",
+                });
+                this.getData();
+              })
+              .catch((error) => {
+                this.$message({
+                  message: "修改失败",
+                  type: "error",
+                });
+              });
+          } else {
+            this.$store
+              .dispatch("trademark/addBaseTrademark", {
+                tmName: this.form.tmName,
+                logoUrl: this.form.imageUrl || "",
+              })
+              .then((data) => {
+                this.clearTradeMark();
+                this.$message({
+                  message: "添加成功",
+                  type: "success",
+                });
+                this.currentPageData.currentPage = Math.ceil(
+                  (this.currentPageData.total + 1) /
+                    this.currentPageData.pageSize
+                );
+                this.getData();
+              })
+              .catch((error) => {
+                this.$message({
+                  message: "添加失败",
+                  type: "error",
+                });
+              });
+          }
+        }
+      });
+    },
     clearTradeMark() {
-      this.form.tmName = undefined;
-      this.form.imageUrl = undefined;
       this.form.dialogFormVisible = false;
     },
     handleAvatarSuccess(res, file) {
@@ -208,7 +332,10 @@ export default {
       else this.form.imageUrl = URL.createObjectURL(file.raw);
     },
     beforeAvatarUpload(file) {
-      const isJPG = file.type === "image/jpeg";
+      const isJPG =
+        file.type === "image/jpeg" ||
+        file.type === "image/gif" ||
+        file.type === "image/png";
       const isLt2M = file.size / 1024 / 1024 < 2;
       if (!isJPG) {
         this.$message.error("上传图片只能是 JPG 格式!");
