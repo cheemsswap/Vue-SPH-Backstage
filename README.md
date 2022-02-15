@@ -964,10 +964,635 @@
         }
 ```
 
+### 第二十七步:新增组件CategorySelect配置静态页面并注册为全局组件
 
+```bash
+    ---components
+        ---CategorySelect
+            ---index.vue
+        核心代码:
+        <el-form :inline="true" :model="formInline" class="demo-form-inline">
+            <el-form-item label="一级分类">
+                <el-select v-model="formInline.category1" placeholder="请选择">
+                    <el-option
+                    v-for="category1 of formInline.category1List"
+                    :key="category1.id"
+                    :label="category1.name"
+                    :value="category1.id"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="二级分类">
+                <el-select v-model="formInline.category2" placeholder="请选择">
+                    <el-option
+                    v-for="category2 of formInline.category2List"
+                    :key="category2.id"
+                    :label="category2.name"
+                    :value="category2.id"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="三级分类">
+                <el-select v-model="formInline.category3" placeholder="请选择">
+                    <el-option
+                    v-for="category3 of formInline.category3List"
+                    :key="category3.id"
+                    :label="category3.name"
+                    :value="category3.id"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        核心代码:
+        name: "CategorySelect",
+        data() {
+            return {
+                formInline: {
+                    category1: "",
+                    category2: "",
+                    category3: "",
+                    category1List: [],
+                    category2List: [],
+                    category3List: [],
+                },
+            };
+        }
+    ---main.js
+        核心代码:
+        //注册全局组件
+        import CategorySelect from '@/components/CategorySelect'
+        Vue.component(CategorySelect.name, CategorySelect)
+```
+### 第二十八步:添加API  产品管理-Attr管理  -> 获取一~三级分类
 
+```bash
+    ---api
+        ---product
+            ---attr.js
+        核心代码:
+        //获取一级分类
+        //GET /admin/product/get/category1
+        export function reqgetCategory1() {
+            return request({
+                url: `/admin/product/getCategory1`,
+                method: 'get',
+            })
+        }
+        //获取二级分类
+        //GET /admin/product/getCategory2/{category1Id}
+        export function reqgetCategory2({ category1Id }) {
+            return request({
+                url: `/admin/product/getCategory2/${category1Id}`,
+                method: 'get',
+            })
+        }
+        //获取三级分类
+        //GET /admin/product/getCategory3/{category2Id}
+        export function reqgetCategory3({ category2Id }) {
+            return request({
+                url: `/admin/product/getCategory3/${category2Id}`,
+                method: 'get',
+            })
+        }
+```
+### 第二十九步:产品管理->Attr管理 使用Vux 获取一~三级分类 ,注册Vuex模块
 
+```bash
+    ---store
+        ---modules
+            ---product
+                ---attr.js
+        核心代码:
+        const actions = {
+            reqgetCategory1({ commit }) {
+                return new Promise((resolve, reject) => {
+                    reqgetCategory1().then(response => {
+                        resolve(response.data)
+                    }).catch(error => {
+                        reject(error)
+                    })
+                })
+            },
+            reqgetCategory2({ commit }, { category1Id }) {
+                return new Promise((resolve, reject) => {
+                    reqgetCategory2({ category1Id }).then(response => {
+                        resolve(response.data)
+                    }).catch(error => {
+                        reject(error)
+                    })
+                })
+            },
+            reqgetCategory3({ commit }, { category2Id }) {
+                return new Promise((resolve, reject) => {
+                    reqgetCategory3({ category2Id }).then(response => {
+                        resolve(response.data)
+                    }).catch(error => {
+                        reject(error)
+                    })
+                })
+            },
+        }        
+    ---stroe
+        ---index.js
+        核心代码:
+        const store = new Vuex.Store({
+            modules: {
+                app,
+                settings,
+                user,
+                trademark,
+                //注册模块
+                attr
+            },
+            getters
+        })        
+```
+### 第三十步:组件CategorySelect使用接口实现逻辑
 
+```bash
+    ---components
+        ---CategorySelect
+            ---index.vue
+        核心代码:
+        watch: {
+            "formInline.category1"() {
+                this.getcategory2();
+                this.clearcategory2();
+            },
+            "formInline.category2"(val) {
+                if (val != "") this.getcategory3();
+                this.clearcategory3();
+            },
+        },
+        mounted() {
+            this.getcategory1();
+        },
+        methods: {
+            getcategory1() {
+                this.$store
+                .dispatch("attr/reqgetCategory1")
+                .then((response) => {
+                    this.formInline.category1List = response;
+                })
+                .catch((error) => {
+                    this.$message({
+                        message: error,
+                        type: "error",
+                    });
+                });
+            },
+            getcategory2() {
+                this.$store
+                .dispatch("attr/reqgetCategory2", {category1Id: this.formInline.category1})
+                .then((response) => {
+                    this.formInline.category2List = response;
+                })
+                .catch((error) => {
+                    this.$message({
+                        message: error,
+                        type: "error",
+                    });
+                });
+            },
+            getcategory3() {
+                this.$store
+                .dispatch("attr/reqgetCategory3", {category2Id: this.formInline.category2})
+                .then((response) => {
+                    this.formInline.category3List = response;
+                })
+                .catch((error) => {
+                    this.$message({
+                        message: error,
+                        type: "error",
+                    });
+                });
+            },
+            clearcategory2() {
+                this.formInline = {
+                    ...this.formInline,
+                    category2: "",
+                    category3: "",
+                    category3List: [],
+                };
+            },
+            clearcategory3() {
+                this.formInline.category3 = "";
+            },
+        },
+```
+### 第三十一步:组件Attr使用 自定义全局组件CategorySelect
 
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-card><CategorySelect /> </el-card>
+```
+### 第三十二步:添加API  产品管理-Attr管理  -> 获取商品基础属性
+
+```bash
+    ---api
+        ---product
+            ---attr.js
+        核心代码:
+        // 商品基础属性接口
+        // GET /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
+        export function reqgetattrInfoList({ category1Id, category2Id, category3Id }) {
+            return request({
+                url: `/admin/product/attrInfoList/${category1Id}/${category2Id}/${category3Id}`,
+                method: 'get',
+            })
+        }
+```
+### 第三十三步:产品管理->Attr管理 使用Vux 获取商品基础属性
+
+```bash
+    ---store
+        ---product
+            ---attr.js
+        核心代码:
+        action:{
+            reqgetattrInfoList({ commit }, { category1Id, category2Id, category3Id }) {
+                return new Promise((resolve, reject) => {
+                    reqgetattrInfoList({ category1Id, category2Id, category3Id })
+                        .then(response => {
+                            resolve(response.data)
+                        }).catch(error => {
+                            reject(error)
+                        })
+                })
+            },
+        }
+```
+### 第三十四步:组件Attr使用 与自定义全局组件CategorySelect交互
+
+```bash
+    使用自定义事件
+    当组件CategorySelect选择了 有效的三级分类 让Attr组件去获取商品基础属性
+                              无效的三级分类 让Attr组件不展示商品分类属性
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-card><CategorySelect @getCategory="getCategory" /> </el-card>
+        核心代码:
+        data() {
+            return {
+                attrInfoList: [],
+            }
+        }
+        methods: {
+            getCategory(category1, category2, category3) {
+                //判断是否是有效的三级分类
+                if (category3)
+                    this.$store
+                    .dispatch("attr/reqgetattrInfoList", {
+                        category1Id: category1,
+                        category2Id: category2,
+                        category3Id: category3,
+                    })
+                    .then((response) => {
+                        this.attrInfoList = response.filter((element) => {
+                            //只显示三级分类
+                            return element.categoryLevel == 3;
+                        });
+                    })
+                    .catch((error) => {
+                        this.$message({
+                            message: error,
+                            type: "error",
+                        });
+                    });
+                //无效的三级分类 清空
+                else {
+                    this.attrInfoList = [];
+                }
+            },
+        }
+    ---components
+        ---CategorySelect
+            ---index.vue
+        核心代码:
+        data() {
+            return {
+                formInline: {
+                    category1: "",
+                    category2: "",
+                    category3: "",
+                    category1List: [],
+                    category2List: [],
+                    category3List: [],
+                },
+            };
+        },
+        watch: {
+            "formInline.category3"(val) {
+                this.$emit(
+                    "getCategory",
+                    this.formInline.category1,
+                    this.formInline.category2,
+                    this.formInline.category3
+                );
+            },
+        },
+```
+### 第三十五步:组件Attr下半部分静态页面的构建,并展示attrInfoList的数据
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-card>
+            <el-button
+            @click="addAttrInfo"
+            type="primary"
+            icon="el-icon-plus"
+            >添加属性
+            </el-button>
+            <el-table :data="attrInfoList" border style="width: 100%">
+                <el-table-column align="center" prop="id" label="序号" width="100">
+                </el-table-column>
+                <el-table-column prop="attrName" label="属性名称" width="180">
+                </el-table-column>
+                <el-table-column prop="attrValueList" label="属性值列表">
+                    <template slot-scope="scope">
+                        <el-tag
+                        style="margin-right: 3px"
+                        type="success"
+                        :key="attrValue.id"
+                        v-for="attrValue of scope.row.attrValueList"
+                        >
+                        {{ attrValue.valueName }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作">
+                    <el-button type="warning" icon="el-icon-edit">修改</el-button>
+                    <el-button type="danger" icon="el-icon-delete">删除</el-button>
+                </el-table-column>
+            </el-table>
+        </el-card>
+        核心代码:
+        data() {
+            return {
+                attrInfoList: [],
+                
+            }
+        }
+```
+### 第三十六步:组件Attr 为添加属性值按钮 添加el-dialog弹出框 静态页面
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-button
+        :disabled="!isAdd"
+        @click="addAttrInfo"
+        type="primary"
+        icon="el-icon-plus"
+        >
+        添加属性
+        </el-button>
+
+        <el-dialog :title="DialogForm.title" :visible.sync="DialogForm.visible">
+            <el-form :model="DialogForm.value">
+                <el-form-item label="属性ID" :label-width="DialogForm.formLabelWidth">
+                    <el-input v-model="DialogForm.value.id" autocomplete="off"></el-input>
+                </el-form-item>
+            <el-form-item label="属性名称" :label-width="DialogForm.formLabelWidth">
+                <el-input v-model="DialogForm.value.attrName" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="属性值" :label-width="DialogForm.formLabelWidth">
+                <template>
+                    <el-tag 
+                    :key="tag" 
+                    v-for="tag in dynamicTags" 
+                    closable 
+                    :disable-transitions="false"
+                    @close="handleClose(tag)"
+                    >
+                    {{ tag }}
+                    </el-tag>
+                    <el-input
+                    class="input-new-tag"
+                    v-if="inputVisible"
+                    v-model="inputValue"
+                    ref="saveTagInput"
+                    size="small"
+                    @keyup.enter.native="handleInputConfirm"
+                    @blur="handleInputConfirm"
+                    >
+                    </el-input>
+                    <el-button
+                    v-else
+                    class="button-new-tag"
+                    size="small"
+                    @click="showInput"
+                    >+ New Tag
+                    </el-button>
+                </template>
+            </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button>取 消</el-button>
+                <el-button type="primary">保 存</el-button>
+            </div>
+        </el-dialog>
+        核心代码:
+        data() {
+            return {
+                isAdd: false,
+                dynamicTags: ["标签一", "标签二", "标签三"],
+                inputVisible: false,
+                inputValue: "",
+            };
+        },
+        methods: {
+            addAttrInfo() {
+                this.DialogForm = {
+                    ...this.DialogForm,
+                    title: "新增属性",
+                    visible: true,
+                };
+            },
+            handleClose(tag) {
+                this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+            },
+            showInput() {
+                this.inputVisible = true;
+                this.$nextTick((_) => {
+                    this.$refs.saveTagInput.$refs.input.focus();
+                });
+            },
+            handleInputConfirm() {
+                let inputValue = this.inputValue;
+                if (inputValue) {
+                    this.dynamicTags.push(inputValue);
+                }
+                this.inputVisible = false;
+                this.inputValue = "";
+            },
+        }
+```
+### 第三十七步:组件Attr 为添加属性的el-dialog弹出框 保存按钮添加校验规则,取消按钮事件
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-dialog :title="DialogForm.title" :visible.sync="DialogForm.visible">
+            <el-form
+            :model="DialogForm.value"
+            :rules="DialogFormRules"
+            ref="DialogForm"
+            >
+                <el-form-item label="属性ID" :label-width="DialogForm.formLabelWidth">
+                    <el-input
+                    disabled
+                    v-model="DialogForm.value.id"
+                    autocomplete="off"
+                    ></el-input>
+                </el-form-item>
+                <el-form-item
+                prop="attrName"
+                label="属性名称"
+                :label-width="DialogForm.formLabelWidth"
+                >
+                    <el-input
+                    v-model="DialogForm.value.attrName"
+                    autocomplete="off"
+                    ></el-input>
+                </el-form-item>
+                <el-form-item
+                prop="dynamicTags"
+                label="属性值"
+                :label-width="DialogForm.formLabelWidth"
+                >
+                    <template>
+                        <el-tag
+                        :key="tag"
+                        v-for="tag in DialogForm.value.dynamicTags"
+                        closable
+                        :disable-transitions="false"
+                        @close="handleClose(tag)"
+                        >
+                        {{ tag }}
+                        </el-tag>
+                        <el-input
+                        class="input-new-tag"
+                        v-if="DialogForm.value.inputVisible"
+                        v-model="DialogForm.value.inputValue"
+                        ref="saveTagInput"
+                        size="small"
+                        @keyup.enter.native="handleInputConfirm"
+                        @blur="handleInputConfirm"
+                        >
+                        </el-input>
+                        <el-button
+                        v-else
+                        class="button-new-tag"
+                        size="small"
+                        @click="showInput"
+                        >+ New Tag</el-button
+                        >
+                    </template>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="cancelAttrInfo">取 消</el-button>
+                <el-button type="primary" @click="saveAttrInfo">保 存</el-button>
+            </div>
+        </el-dialog>
+        核心代码:
+        data() {
+            const validateAttrName = (rule, value, callback) => {
+                if (value && value.length >= 1 && value.length <= 12) {
+                    callback();
+                } else {
+                    callback(new Error("请输入1~12个字符的属性名称"));
+                }
+            };
+            const validatedynamicTags = (rule, value, callback) => {
+                if (value.length) {
+                    callback();
+                } else {
+                    callback(new Error("请添加至少1个属性值"));
+                }
+            };
+            return {
+                attrInfoList: [],
+                isAdd: false,
+                DialogForm: {
+                    visible: false,
+                    title: "",
+                    formLabelWidth: "120px",
+                    value: {
+                        id: "",
+                        attrName: "",
+                        dynamicTags: [],
+                        inputVisible: false,
+                        inputValue: "",
+                    },
+                },
+                DialogFormRules: {
+                    attrName: [{ required: true, trigger: "change", validator: validateAttrName }],
+                    dynamicTags: [{ required: true, trigger: "blur", validator: validatedynamicTags }],
+                },
+            };
+        },
+        methods: {
+            addAttrInfo() {
+                //重置表单参数
+                this.$refs.DialogForm && this.$refs.DialogForm.clearValidate();
+                this.DialogForm = {
+                    ...this.DialogForm,
+                    title: "新增属性",
+                    visible: true,
+                };
+            },
+            cancelAttrInfo() {
+                this.$refs.DialogForm && this.$refs.DialogForm.resetFields();
+                this.DialogForm = {
+                    ...this.DialogForm,
+                    visible: false,
+                };
+            },
+            saveAttrInfo() {
+                //校验
+                this.$refs.DialogForm.validate((valid) => {
+                    //判断校验是否成功
+                    console.log(valid);
+                });
+            },
+            handleClose(tag) {
+                this.DialogForm.value.dynamicTags.splice(this.DialogForm.value.dynamicTags.indexOf(tag), 1);
+            },
+            showInput() {
+                this.DialogForm.value.inputVisible = true;
+                this.$nextTick((_) => {
+                    this.$refs.saveTagInput.$refs.input.focus();
+                });
+            },
+            handleInputConfirm() {
+                let inputValue = this.DialogForm.value.inputValue;
+                //无法插入相同的
+                if (inputValue && this.DialogForm.value.dynamicTags.indexOf(inputValue) == -1) 
+                    this.DialogForm.value.dynamicTags.push(inputValue);  
+                this.DialogForm.value.inputVisible = false;
+                this.DialogForm.value.inputValue = "";
+            },
+        }
+
+```
 
 
