@@ -4,7 +4,9 @@
       <CategorySelect @getCategory="getCategory" />
     </el-card>
     <el-card class="box-card" v-loading="loading">
-      <el-button type="primary" icon="el-icon-plus">添加SPU</el-button>
+      <el-button type="primary" icon="el-icon-plus" @click="addSpuForm"
+        >添加SPU</el-button
+      >
       <el-table :data="recordsData" border style="width: 100%">
         <el-table-column prop="id" label="序号" width="100"> </el-table-column>
         <el-table-column prop="spuName" label="SPU名称" width="180">
@@ -12,10 +14,26 @@
         <el-table-column prop="description" label="SPU描述"> </el-table-column>
         <el-table-column label="操作">
           <template>
-            <el-button type="success" icon="el-icon-plus"></el-button>
-            <el-button type="warning" icon="el-icon-edit"></el-button>
-            <el-button type="info" icon="el-icon-view"></el-button>
-            <el-button type="danger" icon="el-icon-delete"></el-button>
+            <HintButtom
+              type="success"
+              icon="el-icon-plus"
+              title="添加SKU"
+            ></HintButtom>
+            <HintButtom
+              type="warning"
+              icon="el-icon-edit"
+              title="编辑"
+            ></HintButtom>
+            <HintButtom
+              type="info"
+              icon="el-icon-view"
+              title="查看"
+            ></HintButtom>
+            <HintButtom
+              type="danger"
+              icon="el-icon-delete"
+              title="删除"
+            ></HintButtom>
           </template>
         </el-table-column>
       </el-table>
@@ -29,14 +47,20 @@
       >
       </el-pagination>
     </el-card>
+    <SpuForm :title="SpuForm.title" :visible.sync="SpuForm.visible" />
   </div>
 </template>
 
 <script>
+import SpuForm from "./SpuForm";
 export default {
   name: "Spu",
   data() {
     return {
+      SpuForm: {
+        title: "",
+        visible: false,
+      },
       category1Id: "",
       category2Id: "",
       category3Id: "",
@@ -52,6 +76,9 @@ export default {
       recordsData: [],
       loading: false,
     };
+  },
+  components: {
+    SpuForm,
   },
   methods: {
     getCategory(category1Id, category2Id, category3Id) {
@@ -92,6 +119,13 @@ export default {
       this.recordsData = [];
       this.currentPageData.currentPage = 1;
       this.currentPageData.total = 0;
+    },
+    addSpuForm() {
+      this.SpuForm = {
+        ...this.SpuForm,
+        title: "新增SPU",
+        visible: true,
+      };
     },
     handleCurrentChange(val) {
       this.currentPageData.currentPage = val;
