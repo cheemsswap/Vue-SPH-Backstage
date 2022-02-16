@@ -6,6 +6,7 @@ import settings from './modules/settings'
 import user from './modules/user'
 import trademark from './modules/product/tradeMark'
 import attr from './modules/product/attr'
+import spu from './modules/product/spu'
 
 Vue.use(Vuex)
 
@@ -15,7 +16,8 @@ const store = new Vuex.Store({
     settings,
     user,
     trademark,
-    attr
+    attr,
+    spu
   },
   getters
 })

@@ -1,7 +1,7 @@
 <template>
   <div class="attr-container">
     <el-card><CategorySelect @getCategory="getCategory" /> </el-card>
-    <el-card>
+    <el-card v-loading="loading">
       <el-button
         :disabled="!isAdd"
         @click="addAttrInfo"
@@ -27,8 +27,20 @@
           </template>
         </el-table-column>
         <el-table-column label="操作">
-          <el-button type="warning" icon="el-icon-edit">修改</el-button>
-          <el-button type="danger" icon="el-icon-delete">删除</el-button>
+          <template slot-scope="scope">
+            <el-button
+              type="warning"
+              icon="el-icon-edit"
+              @click="updateAttrInfo(scope.row)"
+              >修改</el-button
+            >
+            <el-button
+              type="danger"
+              icon="el-icon-delete"
+              @click="deleteAttrInfo(scope.row)"
+              >删除</el-button
+            >
+          </template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -118,6 +130,10 @@ export default {
       }
     };
     return {
+      loading: false,
+      category1Id: "",
+      category2Id: "",
+      category3Id: "",
       attrInfoList: [],
       isAdd: false,
       DialogForm: {
@@ -144,7 +160,11 @@ export default {
   },
   methods: {
     getCategory(category1, category2, category3) {
-      if (category3)
+      if (category3) {
+        this.category1Id = category1;
+        this.category2Id = category2;
+        this.category3Id = category3;
+        this.loading = true;
         this.$store
           .dispatch("attr/reqgetattrInfoList", {
             category1Id: category1,
@@ -152,6 +172,7 @@ export default {
             category3Id: category3,
           })
           .then((response) => {
+            this.loading = false;
             this.isAdd = true;
             this.attrInfoList = response.filter((element) => {
               //只显示三级分类
@@ -159,36 +180,139 @@ export default {
             });
           })
           .catch((error) => {
+            this.loading = false;
             this.$message({
               message: error,
               type: "error",
             });
           });
-      else {
+      } else {
         this.attrInfoList = [];
         this.isAdd = false;
       }
     },
     addAttrInfo() {
-      this.$refs.DialogForm && this.$refs.DialogForm.clearValidate();
+      this.cancelAttrInfo();
       this.DialogForm = {
         ...this.DialogForm,
         title: "新增属性",
         visible: true,
       };
     },
+    updateAttrInfo({ id, attrName, attrValueList }) {
+      const dynamicTags = [];
+      for (const value of attrValueList) {
+        dynamicTags.push(value.valueName);
+      }
+      this.DialogForm = {
+        ...this.DialogForm,
+        title: "修改属性",
+        visible: true,
+        value: {
+          ...this.DialogForm.value,
+          id,
+          attrName,
+          dynamicTags,
+        },
+      };
+    },
+    deleteAttrInfo({ id }) {
+      this.$confirm("此操作将永久删除该属性, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(() => {
+          this.loading = true;
+          this.$store
+            .dispatch("attr/reqdelattrInfo", { attrId: id })
+            .then((response) => {
+              this.loading = false;
+              this.$message({
+                type: "success",
+                message: "删除成功",
+              });
+              this.getCategory(
+                this.category1Id,
+                this.category2Id,
+                this.category3Id
+              );
+            })
+            .catch((error) => {
+              this.loading = false;
+              this.$message({
+                type: "error",
+                message: error,
+              });
+            });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
+    },
     cancelAttrInfo() {
-      this.$refs.DialogForm && this.$refs.DialogForm.resetFields();
       this.DialogForm = {
         ...this.DialogForm,
         visible: false,
+        value: {
+          id: "",
+          attrName: "",
+          dynamicTags: [],
+          inputVisible: false,
+          inputValue: "",
+        },
       };
+      this.$refs.DialogForm && this.$refs.DialogForm.resetFields();
     },
     saveAttrInfo() {
       //校验
       this.$refs.DialogForm.validate((valid) => {
         //判断校验是否成功
-        console.log(valid);
+        if (valid) {
+          const attrValueList = [];
+          for (const Tags of this.DialogForm.value.dynamicTags)
+            attrValueList.push({
+              valueName: Tags,
+            });
+          const req = {
+            //判断是否是修改还是新增
+            id: this.DialogForm.value.id || undefined,
+            attrName: this.DialogForm.value.attrName,
+            attrValueList,
+            categoryId: this.category3Id,
+            categoryLevel: 3,
+          };
+          this.$store
+            .dispatch("attr/reqsaveattrInfo", req)
+            .then((response) => {
+              if (this.DialogForm.value.id) {
+                this.$message({
+                  type: "success",
+                  message: "修改成功",
+                });
+              } else {
+                this.$message({
+                  type: "success",
+                  message: "添加成功",
+                });
+              }
+              this.cancelAttrInfo();
+              this.getCategory(
+                this.category1Id,
+                this.category2Id,
+                this.category3Id
+              );
+            })
+            .catch((error) => {
+              this.$message({
+                message: error,
+                type: "error",
+              });
+            });
+        }
       });
     },
     handleClose(tag) {

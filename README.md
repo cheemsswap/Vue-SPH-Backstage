@@ -1594,5 +1594,496 @@
         }
 
 ```
+### 第三十八步:添加API  产品管理-Attr管理  -> 增加和修改商品基础属性
 
+```bash
+    ---api
+        ---product
+            ---attr.js
+        核心代码:
+        //新增和修改商品属性
+        //POST /admin/product/saveAttrInfo
+        export function reqsaveattrInfo(req) {
+            return request({
+                url: `/admin/product/saveAttrInfo`,
+                method: 'post',
+                data: req
+            })
+        }
+```
+### 第三十九步:产品管理->Attr管理 使用Vux 增加和修改商品基础属性
 
+```bash
+    ---store
+        ---product
+            ---attr.js
+        核心代码:
+        action:{
+            reqsaveattrInfo({ commit }, req) {
+                return new Promise((resolve, reject) => {
+                    reqsaveattrInfo(req)
+                        .then(response => {
+                            resolve(response)
+                        }).catch(error => {
+                            reject(error)
+                        })
+                })
+            }
+        }
+```
+### 第四十步:组件Attr 完善增加基本商品属性功能
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        methods:{
+            saveAttrInfo() {
+            //校验
+            this.$refs.DialogForm.validate((valid) => {
+            //判断校验是否成功
+            if (valid) {
+                const attrValueList = [];
+                for (const Tags of this.DialogForm.value.dynamicTags)
+                    attrValueList.push({
+                        valueName: Tags,
+                    });
+                const req = {
+                    attrName: this.DialogForm.value.attrName,
+                    attrValueList,
+                    categoryId: this.category3Id,
+                    categoryLevel: 3,
+                };
+                this.$store
+                .dispatch("attr/reqsaveattrInfo", req)
+                .then((response) => {
+                    this.$message({
+                        type: "success",
+                        message: "添加成功",
+                    });
+                    //清空表单参数 并 隐藏Dialog表单
+                    this.$refs.DialogForm && this.$refs.DialogForm.resetFields();
+                    this.DialogForm = {
+                        ...this.DialogForm,
+                        visible: false,
+                    };
+                    //再次发送请求
+                    this.getCategory(
+                        this.category1Id,
+                        this.category2Id,
+                        this.category3Id
+                    );
+                })
+                .catch((error) => {
+                    this.$message({
+                        message: error,
+                        type: "error",
+                    });
+                });
+                }
+            });
+            }
+        }
+```
+### 第四十一步:组件Attr 增加修改功能
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-table-column label="操作">
+            <template slot-scope="scope">
+                <el-button
+                type="warning"
+                icon="el-icon-edit"
+                @click="updateAttrInfo(scope.row)"
+                >修改</el-button
+                >
+                <el-button type="danger" icon="el-icon-delete">删除</el-button>
+            </template>
+        </el-table-column>
+        核心代码:
+        methods:{
+            updateAttrInfo({ id, attrName, attrValueList }) {
+                const dynamicTags = [];
+                for (const value of attrValueList) {
+                    dynamicTags.push(value.valueName);
+                }
+                this.DialogForm = {
+                    ...this.DialogForm,
+                    title: "修改属性",
+                    visible: true,
+                    value: {
+                        ...this.DialogForm.value,
+                        id,
+                        attrName,
+                        dynamicTags,
+                    },
+                };
+            },
+            saveAttrInfo() {
+                //校验
+                this.$refs.DialogForm.validate((valid) => {
+                    //判断校验是否成功
+                    if (valid) {
+                        const attrValueList = [];
+                        for (const Tags of this.DialogForm.value.dynamicTags)
+                            attrValueList.push({
+                                valueName: Tags,
+                            });
+                        const req = {
+                            //判断是否是修改还是新增
+                            id: this.DialogForm.value.id || undefined,
+                            attrName: this.DialogForm.value.attrName,
+                            attrValueList,
+                            categoryId: this.category3Id,
+                            categoryLevel: 3,
+                        };
+                        this.$store
+                        .dispatch("attr/reqsaveattrInfo", req)
+                        .then((response) => {
+                            if (this.DialogForm.value.id) {
+                                this.$message({
+                                    type: "success",
+                                    message: "修改成功",
+                                });
+                            } else {
+                                this.$message({
+                                    type: "success",
+                                    message: "添加成功",
+                                });
+                            }
+                            this.cancelAttrInfo();
+                            this.getCategory(
+                            this.category1Id,
+                            this.category2Id,
+                            this.category3Id
+                            );
+                        })
+                        .catch((error) => {
+                            this.$message({
+                                message: error,
+                                type: "error",
+                            });
+                        });
+                    }   
+                });
+            }
+        }
+```
+### 第四十二步:添加API  产品管理-Attr管理  -> 删除商品基础属性
+
+```bash
+    ---api
+        ---product
+            ---attr.js
+        核心代码:
+        //删除商品属性
+        //DELETE /admin/product/deleteAttr/{attrId}
+        export function reqdelattrInfo({ attrId }) {
+            return request({
+                url: `/admin/product/deleteAttr/${attrId}`,
+                method: 'delete'
+            })
+        }
+```
+### 第四十三步:产品管理->Attr管理 使用Vux 删除商品基础属性
+
+```bash
+    ---store
+        ---modules
+            ---product
+                ---attr.js
+        核心代码:
+        action:{
+            reqdelattrInfo({ commit }, { attrId }) {
+                return new Promise((resolve, reject) => {
+                    reqdelattrInfo({ attrId })
+                        .then(response => {
+                            resolve(response)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            }
+        }
+```
+### 第四十四步:组件Attr 增加删除功能
+
+```bash
+    ---views
+        ---product
+            ---Attr
+                ---index.vue
+        核心代码:
+        <el-table-column label="操作">
+            <template slot-scope="scope">
+                <el-button
+                type="warning"
+                icon="el-icon-edit"
+                @click="updateAttrInfo(scope.row)"
+                >修改</el-button
+                >
+                <el-button
+                type="danger"
+                icon="el-icon-delete"
+                @click="deleteAttrInfo(scope.row)"
+                >删除</el-button
+                >
+            </template>
+        </el-table-column>
+        核心代码:
+        methods:{
+            deleteAttrInfo({ id }) {
+                this.$confirm("此操作将永久删除该属性, 是否继续?", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning",
+                })
+                .then(() => {
+                    this.$store
+                    .dispatch("attr/reqdelattrInfo", { attrId: id })
+                    .then((response) => {
+                        this.$message({
+                            type: "success",
+                            message: "删除成功",
+                        });
+                        this.getCategory(
+                        this.category1Id,
+                        this.category2Id,
+                        this.category3Id
+                        );
+                    })
+                    .catch((error) => {
+                        this.$message({
+                            type: "error",
+                            message: error,
+                        });
+                    });
+                })
+                .catch(() => {
+                    this.$message({
+                        type: "info",
+                        message: "已取消删除",
+                    });
+                });
+            }
+        }
+```
+### 第四十五步:组件SPU静态页面构建
+
+```bash
+    ---views
+        ---product
+            ---Spu
+                ---index.vue
+        核心代码:
+        <template>
+            <div class="spu-container">
+                <el-card class="box-card">
+                    <CategorySelect />
+                </el-card>
+                <el-card class="box-card">
+                    <el-button type="primary" icon="el-icon-plus">添加SPU</el-button>
+                    <el-table :data="tableData" border style="width: 100%">
+                        <el-table-column prop="date" label="序号" width="100">
+                        </el-table-column>
+                        <el-table-column prop="name" label="SPU名称" width="180">
+                        </el-table-column>
+                        <el-table-column prop="address" label="SPU描述"> </el-table-column>
+                        <el-table-column prop="address" label="操作">
+                        <template>
+                            <el-button type="success" icon="el-icon-plus"></el-button>
+                            <el-button type="warning" icon="el-icon-edit"></el-button>
+                            <el-button type="info" icon="el-icon-view"></el-button>
+                            <el-button type="danger" icon="el-icon-delete"></el-button>
+                        </template>
+                        </el-table-column>
+                    </el-table>
+                    <el-pagination background layout="prev, pager, next" :total="1000">
+                    </el-pagination>
+                </el-card>
+            </div>
+        </template>
+        <script>
+        export default {
+            name: "Spu",
+            data() {
+                return {
+                    tableData: [
+                        {
+                        date: "2016-05-02",
+                        name: "王小虎",
+                        address: "上海市普陀区金沙江路 1518 弄",
+                        },
+                    ],
+                };
+            },
+        };
+        </script>
+```
+### 第四十六步:添加API  产品管理-Spu管理  -> 查询Spu列表 
+
+```bash
+    ---api
+        ---product
+            ---spu.js
+        核心代码:
+        //获取SPU列表
+        // GET /admin/product/{page}/{limit}
+        export function reqgetspuInfoList({ page, limit, req }) {
+            return request({
+                url: `/admin/product/${page}/${limit}`,
+                method: "get",
+                params: req
+            })
+        }
+```
+### 第四十七步:产品管理->Spu管理 使用Vux(并注册) 查询Spu列表
+
+```bash
+    ---store
+        ---modules
+            ---product
+                ---spu.js
+        核心代码:
+        const actions = {
+            reqgetspuInfoList({ commit }, { page, limit, req }) {
+                return new Promise((resolve, reject) => {
+                    reqgetspuInfoList({ page, limit, req })
+                        .then(response => {
+                            resolve(response.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            }
+        }
+    ---store
+        ---index.js
+        核心代码:
+        const store = new Vuex.Store({
+            modules: {
+                app,
+                settings,
+                user,
+                trademark,
+                attr,
+                //注册spu组件
+                spu
+            },
+            getters
+        })
+```
+### 第四十八步:组件SPU根据 使用自定义事件获取CategorySelect传来的参数并发送查询请求
+
+```bash
+    使用自定义事件
+    当组件CategorySelect选择了 有效的三级分类 让SPU组件去获取SPU列表并展示
+                              无效的三级分类 让SPU组件不展示列表
+    当组件SPU触发分页 让SPU组件去获取SPU列表并展示
+    ---views
+        ---product
+            ---Spu
+                ---index.vue
+        核心代码:
+        <el-card class="box-card">
+            <CategorySelect @getCategory="getCategory" />
+        </el-card>
+        <el-card class="box-card" v-loading="loading">
+            <el-button type="primary" icon="el-icon-plus">添加SPU</el-button>
+            <el-table :data="recordsData" border style="width: 100%">
+                <el-table-column prop="id" label="序号" width="100"> </el-table-column>
+                <el-table-column prop="spuName" label="SPU名称" width="180">
+                </el-table-column>
+                <el-table-column prop="description" label="SPU描述"> </el-table-column>
+                <el-table-column label="操作">
+                    <template>
+                        <el-button type="success" icon="el-icon-plus"></el-button>
+                        <el-button type="warning" icon="el-icon-edit"></el-button>
+                        <el-button type="info" icon="el-icon-view"></el-button>
+                        <el-button type="danger" icon="el-icon-delete"></el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <el-pagination
+            :current-page.sync="currentPageData.currentPage"
+            :page-size="currentPageData.pageSize"
+            @current-change="handleCurrentChange"
+            background
+            layout="prev, pager, next"
+            :total="currentPageData.total"
+            >
+            </el-pagination>
+        </el-card>
+        核心代码:
+        data() {
+            return {
+                category1Id: "",
+                category2Id: "",
+                category3Id: "",
+                //分页数据
+                currentPageData: {
+                    //当前页
+                    currentPage: 1,
+                    //每页展示的数量
+                    pageSize: 3,
+                    //总条数
+                    total: 0,
+                },
+                recordsData: [],
+                loading: false,
+            };
+        },
+        methods: {
+            getCategory(category1Id, category2Id, category3Id) {
+                this.category1Id = category1Id;
+                this.category2Id = category2Id;
+                this.category3Id = category3Id;
+                if (category3Id != "") {
+                    this.getrecordsData();
+                } else {
+                    this.clearrecordsData();
+                }
+            },
+            getrecordsData() {
+                this.loading = true;
+                const req = {
+                    category3Id: this.category3Id,
+                };
+                this.$store
+                .dispatch("spu/reqgetspuInfoList", {
+                page: this.currentPageData.currentPage,
+                limit: this.currentPageData.pageSize,
+                req,
+                })
+                .then((response) => {
+                    this.loading = false;
+                    this.currentPageData.total = response.total;
+                    this.recordsData = response.records;
+                })
+                .catch((error) => {
+                    this.loading = false;
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                });
+            },
+            clearrecordsData() {
+                this.recordsData = [];
+                this.currentPageData.currentPage = 1;
+                this.currentPageData.total = 0;
+            },
+            handleCurrentChange(val) {
+                this.currentPageData.currentPage = val;
+                this.getrecordsData();
+            },
+        }
+```

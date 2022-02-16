@@ -1,5 +1,10 @@
 <template>
-  <el-form :inline="true" :model="formInline" class="demo-form-inline">
+  <el-form
+    v-loading="loading"
+    :inline="true"
+    :model="formInline"
+    class="demo-form-inline"
+  >
     <el-form-item label="一级分类">
       <el-select v-model="formInline.category1" placeholder="请选择">
         <el-option
@@ -46,6 +51,7 @@ export default {
         category2List: [],
         category3List: [],
       },
+      loading: false,
     };
   },
   watch: {
@@ -71,12 +77,15 @@ export default {
   },
   methods: {
     getcategory1() {
+      this.loading = true;
       this.$store
         .dispatch("attr/reqgetCategory1")
         .then((response) => {
+          this.loading = false;
           this.formInline.category1List = response;
         })
         .catch((error) => {
+          this.loading = false;
           this.$message({
             message: error,
             type: "error",
@@ -84,14 +93,17 @@ export default {
         });
     },
     getcategory2() {
+      this.loading = true;
       this.$store
         .dispatch("attr/reqgetCategory2", {
           category1Id: this.formInline.category1,
         })
         .then((response) => {
+          this.loading = false;
           this.formInline.category2List = response;
         })
         .catch((error) => {
+          this.loading = false;
           this.$message({
             message: error,
             type: "error",
@@ -99,14 +111,17 @@ export default {
         });
     },
     getcategory3() {
+      this.loading = true;
       this.$store
         .dispatch("attr/reqgetCategory3", {
           category2Id: this.formInline.category2,
         })
         .then((response) => {
+          this.loading = false;
           this.formInline.category3List = response;
         })
         .catch((error) => {
+          this.loading = false;
           this.$message({
             message: error,
             type: "error",

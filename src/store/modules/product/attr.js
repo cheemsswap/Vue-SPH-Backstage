@@ -1,4 +1,11 @@
-import { reqgetCategory1, reqgetCategory2, reqgetCategory3, reqgetattrInfoList } from '@/api/product/attr'
+import {
+    reqgetCategory1,
+    reqgetCategory2,
+    reqgetCategory3,
+    reqgetattrInfoList,
+    reqsaveattrInfo,
+    reqdelattrInfo
+} from '@/api/product/attr'
 
 
 const getDefaultState = () => {
@@ -50,6 +57,27 @@ const actions = {
                 })
         })
     },
+    reqsaveattrInfo({ commit }, req) {
+        return new Promise((resolve, reject) => {
+            reqsaveattrInfo(req)
+                .then(response => {
+                    resolve(response)
+                }).catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    reqdelattrInfo({ commit }, { attrId }) {
+        return new Promise((resolve, reject) => {
+            reqdelattrInfo({ attrId })
+                .then(response => {
+                    resolve(response)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    }
 }
 
 export default {

@@ -36,3 +36,22 @@ export function reqgetattrInfoList({ category1Id, category2Id, category3Id }) {
         method: 'get',
     })
 }
+
+//新增or修改商品属性
+//POST /admin/product/saveAttrInfo
+export function reqsaveattrInfo(req) {
+    return request({
+        url: `/admin/product/saveAttrInfo`,
+        method: 'post',
+        data: req
+    })
+}
+
+//删除商品属性
+//DELETE /admin/product/deleteAttr/{attrId}
+export function reqdelattrInfo({ attrId }) {
+    return request({
+        url: `/admin/product/deleteAttr/${attrId}`,
+        method: 'delete'
+    })
+}
