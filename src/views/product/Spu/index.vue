@@ -13,7 +13,7 @@
         </el-table-column>
         <el-table-column prop="description" label="SPU描述"> </el-table-column>
         <el-table-column label="操作">
-          <template>
+          <template slot-scope="scope">
             <HintButtom
               type="success"
               icon="el-icon-plus"
@@ -23,6 +23,7 @@
               type="warning"
               icon="el-icon-edit"
               title="编辑"
+              @click="updateSpuFrom(scope.row)"
             ></HintButtom>
             <HintButtom
               type="info"
@@ -47,7 +48,11 @@
       >
       </el-pagination>
     </el-card>
-    <SpuForm :title="SpuForm.title" :visible.sync="SpuForm.visible" />
+    <SpuForm
+      v-bind="SpuForm"
+      :title="SpuForm.title"
+      :visible.sync="SpuForm.visible"
+    />
   </div>
 </template>
 
@@ -60,6 +65,11 @@ export default {
       SpuForm: {
         title: "",
         visible: false,
+        id: "",
+        spuName: "",
+        tmId: "",
+        description: "",
+        category3Id: "",
       },
       category1Id: "",
       category2Id: "",
@@ -125,6 +135,25 @@ export default {
         ...this.SpuForm,
         title: "新增SPU",
         visible: true,
+        id: undefined,
+        spuName: "",
+        tmId: "",
+        description: "",
+        category3Id: this.category3Id,
+      };
+    },
+    updateSpuFrom(row) {
+      const { id, spuName, description, spuImageList, tmId, category3Id } = row;
+      this.SpuForm = {
+        ...this.SpuForm,
+        title: "修改SPU",
+        visible: true,
+        id,
+        spuName,
+        description,
+        tmId,
+        spuImageList: spuImageList || [],
+        category3Id,
       };
     },
     handleCurrentChange(val) {

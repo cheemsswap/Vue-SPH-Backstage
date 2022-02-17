@@ -39,6 +39,8 @@ import CategorySelect from '@/components/CategorySelect'
 Vue.component(CategorySelect.name, CategorySelect)
 import HintButtom from '@/components/HintButtom'
 Vue.component(HintButtom.name, HintButtom)
+import Tag from '@/components/Tag'
+Vue.component(Tag.name, Tag)
 new Vue({
   el: '#app',
   router,

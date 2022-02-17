@@ -2230,3 +2230,509 @@
             SpuForm,
         }
 ```
+### 第五十二步:添加API  产品管理-Spu管理  -> 获取品牌列表，获取基本销售属性，获取SPU基本信息，获取SPU图片
+
+```bash
+    ---api
+        ---product  
+            ---spu.js
+        核心代码:
+        //获取品牌列表
+        // GET /admin/product/baseTrademark/getTrademarkList
+        export function reqgetTrademarkList() {
+            return request({
+                url: `/admin/product/baseTrademark/getTrademarkList`,
+                method: "get"
+            })
+        }
+        //获取基本销售属性
+        // GET /admin/product/baseSaleAttrList
+        export function reqgetbaseSaleAttrList() {
+            return request({
+                url: `/admin/product/baseSaleAttrList`,
+                method: "get"
+            })
+        }
+        //获取SPU基本信息
+        // GET /admin/product/getSpuById/{spuId}
+        export function reqgetSpuById({ spuId }) {
+            return request({
+                url: `/admin/product/getSpuById/${spuId}`,
+                method: "get"
+            })
+        }
+        //获取SPU图片
+        //GET /admin/product/spuImageList/{spuId}
+        export function reqgetspuImageList({ spuId }) {
+            return request({
+                url: `/admin/product/spuImageList/${spuId}`,
+                method: "get"
+            })
+        }
+```
+### 第五十三步:产品管理->Spu管理  获取品牌列表，获取基本销售属性，获取SPU基本信息，获取SPU图片
+
+```bash
+    ---store
+        ---modules
+            ---product
+                ---spu.js
+        核心代码:
+        const actions = {
+            reqgetTrademarkList({ commit }) {
+                return new Promise((resolve, reject) => {
+                    reqgetTrademarkList()
+                        .then(response => {
+                            resolve(response.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            },
+            reqgetbaseSaleAttrList({ commit }) {
+                return new Promise((resolve, reject) => {
+                    reqgetbaseSaleAttrList()
+                        .then(response => {
+                            resolve(response.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            },
+            reqgetSpuById({ commit }, { spuId }) {
+                return new Promise((resolve, reject) => {
+                    reqgetSpuById({ spuId })
+                        .then(response => {
+                            resolve(response.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            },
+            reqgetspuImageList({ commit }, { spuId }) {
+                return new Promise((resolve, reject) => {
+                    reqgetspuImageList({ spuId })
+                        .then(response => {
+                            resolve(response.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            },
+        }
+```
+### 第五十四步:新增全局组件Tag 二次封装 动态编辑Tag标签
+
+```bash
+    ---components
+        ---Tag
+            ---index.vue
+        核心代码:
+        <template>
+        <div v-bind="$attrs" v-on="$listeners">
+            <el-tag
+            :key="tag.id"
+            v-for="tag in dynamicTags"
+            closable
+            :disable-transitions="false"
+            @close="handleClose(tag.saleAttrValueName)"
+            >
+            {{ tag.saleAttrValueName }}
+            </el-tag>
+            <el-input
+            class="input-new-tag"
+            v-if="inputVisible"
+            v-model="inputValue"
+            ref="saveTagInput"
+            size="small"
+            @keyup.enter.native="handleInputConfirm"
+            @blur="handleInputConfirm"
+            >
+            </el-input>
+            <el-button v-else class="button-new-tag" size="small" @click="showInput"
+            >+ New Tag</el-button
+            >
+        </div>
+        </template>
+        data() {
+            return {
+                dynamicTags: [],
+                inputVisible: false,
+                inputValue: "",
+            };
+        },
+        props: ["spuSaleAttrValueList"],
+        watch: {
+            spuSaleAttrValueList() {
+                this.dynamicTags = this.spuSaleAttrValueList;
+            },
+        },
+        mounted() {
+            this.dynamicTags = this.spuSaleAttrValueList;
+        },
+        methods: {
+            handleClose(tag) {
+                this.dynamicTags = this.dynamicTags.filter((Element) => {
+                return Element.saleAttrValueName != tag;
+                });
+                this.$emit("update:spuSaleAttrValueList", this.dynamicTags);
+            },
+            showInput() {
+                this.inputVisible = true;
+                this.$nextTick((_) => {
+                this.$refs.saveTagInput.$refs.input.focus();
+                });
+            },
+            handleInputConfirm() {
+                let inputValue = this.inputValue;
+                if (inputValue && this.dynamicTags.indexOf(inputValue) == -1) {
+                this.dynamicTags.push({ saleAttrValueName: inputValue });
+                this.$emit("update:spuSaleAttrValueList", this.dynamicTags);
+                }
+                this.inputVisible = false;
+                this.inputValue = "";
+            }
+        }
+```
+### 第五十五步:对SpuForm进行加工 调用接口获取品牌信息、照片墙参数、销售属性、并使用了二次封装Tag组件,取消按钮，重置按钮
+
+```bash
+    ---views
+        ---product
+            ---Spu
+                ---SpuForm
+                    ---index.vue
+        代码:
+        <template>
+        <el-dialog v-loading="loading" v-bind="$attrs" v-on="$listeners">
+            <el-form :model="form">
+            <el-form-item label="SPU名称" :label-width="formLabelWidth">
+                <el-input
+                v-model="form.spuName"
+                placeholder="请输入SPU名称"
+                autocomplete="off"
+                ></el-input>
+            </el-form-item>
+            <el-form-item label="品牌" :label-width="formLabelWidth">
+                <el-select v-model="form.tmId" placeholder="请选择品牌">
+                <el-option
+                    :label="trademark.tmName"
+                    :value="trademark.id"
+                    v-for="trademark of form.trademarkList"
+                    :key="trademark.id"
+                ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="SPU描述" :label-width="formLabelWidth">
+                <el-input
+                v-model="form.description"
+                type="textarea"
+                :rows="2"
+                placeholder="请输入SPU描述"
+                >
+                </el-input>
+            </el-form-item>
+            <el-form-item label="SPU图片" :label-width="formLabelWidth">
+                <el-upload
+                :action="action"
+                list-type="picture-card"
+                :on-preview="handlePictureCardPreview"
+                :on-remove="handleRemove"
+                :on-success="handleAvatarSuccess"
+                :file-list="form.spuImageList"
+                >
+                <i class="el-icon-plus"></i>
+                </el-upload>
+                <el-dialog :visible.sync="dialogVisible" append-to-body>
+                <img width="100%" :src="dialogImageUrl" alt="" />
+                </el-dialog>
+            </el-form-item>
+            <el-form-item label="销售属性" :label-width="formLabelWidth">
+                <el-select v-model="form.saleId" placeholder="请选择基本销售属性">
+                <el-option
+                    :label="saleAttr.name"
+                    :value="saleAttr.id"
+                    v-for="saleAttr of form.saleAttrList"
+                    :key="saleAttr.id"
+                ></el-option>
+                </el-select>
+                <el-button
+                style="margin-left: 5px"
+                icon="el-icon-plus"
+                type="primary"
+                :disabled="form.saleId == '' ? true : false"
+                @click="addAttr"
+                >添加销售属性</el-button
+                >
+                <el-table border :data="form.spuSaleAttrList">
+                <el-table-column prop="id" label="序号" width="60"> </el-table-column>
+                <el-table-column prop="saleAttrName" label="属性名" width="80">
+                </el-table-column>
+                <el-table-column prop="spuSaleAttrValueList" label="属性名称列表">
+                    <template slot-scope="scope">
+                    <Tag v-bind.sync="scope.row" />
+                    </template>
+                </el-table-column>
+                <el-table-column prop="spuSaleAttrValueList" label="操作" width="100">
+                    <template slot-scope="scope">
+                    <el-popconfirm
+                        confirm-button-text="好的"
+                        cancel-button-text="不用了"
+                        icon="el-icon-info"
+                        icon-color="red"
+                        title="确定删除吗？"
+                        @onConfirm="delAttr(scope.row.id)"
+                    >
+                        <el-button type="danger" slot="reference">删除</el-button>
+                    </el-popconfirm>
+                    </template>
+                </el-table-column>
+                </el-table>
+            </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+            <el-button @click="reset">重 置</el-button>
+            <el-button @click="$emit('update:visible', false)">取 消</el-button>
+            <el-button type="primary" @click="saveSpuForm()">确 定</el-button>
+            </div>
+        </el-dialog>
+        </template>
+        import { nanoid } from "nanoid";
+        data() {
+            return {
+                loading: false,
+                form: {
+                    id: "",
+                    spuName: "",
+                    tmId: "",
+                    description: "",
+                    trademarkList: [],
+                    saleId: "",
+                    saleAttrList: [],
+                    spuSaleAttrList: [],
+                    spuImageList: [],
+                },
+                action: process.env.VUE_APP_BASE_API + "/admin/product/fileUpload",
+                formLabelWidth: "120px",
+                dialogImageUrl: "",
+                dialogVisible: false,
+            };
+        },
+        props: [
+            "id",
+            "spuName",
+            "description",
+            "spuImageList",
+            "tmId",
+            "category3Id",
+        ],
+        watch: {
+            id() {
+                this.reset();
+            },
+        },
+        methods: {
+            handleRemove(file, fileList) {
+                this.form.spuImageList = fileList;
+            },
+            handlePictureCardPreview(file) {
+                this.dialogImageUrl = file.response.data;
+                this.dialogVisible = true;
+            },
+            handleAvatarSuccess(res, file, fileList) {
+                this.form.spuImageList = fileList;
+            },
+            delAttr(id) {
+                this.form.saleId = "";
+                this.form.spuSaleAttrList = this.form.spuSaleAttrList.filter((e) => {
+                    if (e.id == id) {
+                        this.form.saleAttrList.push({
+                            id,
+                            name: e.saleAttrName,
+                        });
+                        return false;
+                    }
+                    return true;
+                });
+            },
+            addAttr() {
+                let saleAttrName = "";
+                this.form.saleAttrList = this.form.saleAttrList.filter((e) => {
+                    if (e.id == this.form.saleId) {
+                    saleAttrName = e.name;
+                    return false;
+                    }
+                    return true;
+                });
+                this.form.spuSaleAttrList.push({
+                    id: nanoid(),
+                    saleAttrName: saleAttrName,
+                    spuSaleAttrValueList: [],
+                });
+                this.form.saleId = "";
+            },
+            reset() {
+                this.loading = true;
+                let flag = 0;
+                this.form = {
+                    ...this.form,
+                    spuName: this.spuName,
+                    description: this.description,
+                    tmId: this.tmId,
+                    spuImageList: this.spuImageList,
+                    saleId: "",
+                    spuImageList: [],
+                    spuSaleAttrList: [],
+                    id: this.id,
+                };
+                //发请求
+                //2个基本请求
+                this.$store
+                    .dispatch("spu/reqgetTrademarkList")
+                    .then((data) => {
+                    this.form.trademarkList = data;
+                    flag++;
+                    if ((this.form.id && flag == 4) || (!this.form.id && flag == 2)) {
+                        this.loading = false;
+                    }
+                    })
+                    .catch((error) => {
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                    this.form.trademarkList = [];
+                    this.loading = false;
+                    });
+                this.$store
+                    .dispatch("spu/reqgetbaseSaleAttrList")
+                    .then((data) => {
+                    flag++;
+                    if ((this.form.id && flag == 4) || (!this.form.id && flag == 2)) {
+                        this.loading = false;
+                    }
+                    this.form.saleAttrList = data;
+                    if (this.form.id) {
+                        this.$store
+                        .dispatch("spu/reqgetSpuById", { spuId: this.form.id })
+                        .then((data) => {
+                            flag++;
+                            if (
+                            (this.form.id && flag == 4) ||
+                            (!this.form.id && flag == 2)
+                            ) {
+                            this.loading = false;
+                            }
+                            this.form.spuSaleAttrList = data.spuSaleAttrList;
+                            this.form.saleAttrList = this.form.saleAttrList.filter((e) => {
+                            for (const spuSaleAttr of data.spuSaleAttrList) {
+                                if (spuSaleAttr.saleAttrName == e.name) return false;
+                            }
+                            return true;
+                            });
+                        })
+                        .catch((error) => {
+                            this.$message({
+                            type: "error",
+                            message: error,
+                            });
+                            this.loading = false;
+                        });
+                    }
+                    })
+                    .catch((error) => {
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                    this.loading = false;
+                    this.form.saleAttrList = [];
+                    });
+                    if (this.form.id) {
+                        this.$store
+                        .dispatch("spu/reqgetspuImageList", { spuId: this.form.id })
+                        .then((data) => {
+                            flag++;
+                            if ((this.form.id && flag == 4) || (!this.form.id && flag == 2)) {
+                            this.loading = false;
+                            }
+                            for (const value of data) {
+                            if (value.imgUrl) {
+                                this.form.spuImageList.push({
+                                response: { data: value.imgUrl },
+                                url: value.imgUrl,
+                                });
+                            }
+                            }
+                        })
+                        .catch((error) => {
+                            this.$message({
+                            type: "error",
+                            message: error,
+                            });
+                            this.loading = false;
+                        });
+                    }
+            },
+            clear() {
+                //清空
+                this.form = {
+                    ...this.form,
+                    spuName: "",
+                    description: "",
+                    tmId: "",
+                    spuImageList: [],
+                    saleId: "",
+                    spuImageList: [],
+                    spuSaleAttrList: [],
+                    id: "",
+                };
+                this.loading = true;
+                let flag = 0;
+                this.$store
+                    .dispatch("spu/reqgetTrademarkList")
+                    .then((data) => {
+                    this.form.trademarkList = data;
+                    flag++;
+                    if ((this.form.id && flag == 4) || (!this.form.id && flag == 2)) {
+                        this.loading = false;
+                    }
+                    })
+                    .catch((error) => {
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                    this.form.trademarkList = [];
+                    this.loading = false;
+                    });
+                this.$store
+                    .dispatch("spu/reqgetbaseSaleAttrList")
+                    .then((data) => {
+                    flag++;
+                    if ((this.form.id && flag == 4) || (!this.form.id && flag == 2)) {
+                        this.loading = false;
+                    }
+                    this.form.saleAttrList = data;
+                    })
+                    .catch((error) => {
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                    this.loading = false;
+                    this.form.saleAttrList = [];
+                    });
+            },
+            saveSpuForm() {
+                //保存
+                console.log("正在保存");
+                this.clear();
+            },
+        }
+    }
+```
