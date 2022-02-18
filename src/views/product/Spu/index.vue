@@ -4,7 +4,11 @@
       <CategorySelect @getCategory="getCategory" />
     </el-card>
     <el-card class="box-card" v-loading="loading">
-      <el-button type="primary" icon="el-icon-plus" @click="addSpuForm"
+      <el-button
+        type="primary"
+        icon="el-icon-plus"
+        @click="addSpuForm"
+        :disabled="category3Id == '' || category3Id == undefined ? true : false"
         >添加SPU</el-button
       >
       <el-table :data="recordsData" border style="width: 100%">
@@ -18,6 +22,7 @@
               type="success"
               icon="el-icon-plus"
               title="添加SKU"
+              @click="addSkuForm(scope.row)"
             ></HintButtom>
             <HintButtom
               type="warning"
@@ -30,11 +35,21 @@
               icon="el-icon-view"
               title="查看"
             ></HintButtom>
-            <HintButtom
-              type="danger"
-              icon="el-icon-delete"
-              title="删除"
-            ></HintButtom>
+            <el-popconfirm
+              confirm-button-text="好的"
+              cancel-button-text="不用了"
+              icon="el-icon-info"
+              icon-color="red"
+              title="你确定要删除吗？"
+              @onConfirm="deleteSpuForm(scope.row)"
+            >
+              <HintButtom
+                slot="reference"
+                type="danger"
+                icon="el-icon-delete"
+                title="删除"
+              ></HintButtom>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -52,12 +67,21 @@
       v-bind="SpuForm"
       :title="SpuForm.title"
       :visible.sync="SpuForm.visible"
+      @getrecordsData="getrecordsData"
+      ref="spufrom"
+    />
+    <SkuForm
+      v-bind="SkuForm"
+      :title="SkuForm.title"
+      :visible.sync="SkuForm.visible"
+      ref="skufrom"
     />
   </div>
 </template>
 
 <script>
 import SpuForm from "./SpuForm";
+import SkuForm from "./SkuForm";
 export default {
   name: "Spu",
   data() {
@@ -70,6 +94,11 @@ export default {
         tmId: "",
         description: "",
         category3Id: "",
+      },
+      SkuForm: {
+        title: "",
+        visible: false,
+        spuName: "",
       },
       category1Id: "",
       category2Id: "",
@@ -89,6 +118,7 @@ export default {
   },
   components: {
     SpuForm,
+    SkuForm,
   },
   methods: {
     getCategory(category1Id, category2Id, category3Id) {
@@ -141,6 +171,7 @@ export default {
         description: "",
         category3Id: this.category3Id,
       };
+      this.$refs.spufrom.reset();
     },
     updateSpuFrom(row) {
       const { id, spuName, description, spuImageList, tmId, category3Id } = row;
@@ -155,6 +186,41 @@ export default {
         spuImageList: spuImageList || [],
         category3Id,
       };
+      this.$refs.spufrom.reset();
+    },
+    deleteSpuForm(row) {
+      const { id } = row;
+      this.$store
+        .dispatch("spu/reqdeleteSpuInfo", { spuId: id })
+        .then((data) => {
+          this.$message({
+            type: "success",
+            message: "删除成功",
+          });
+          this.getrecordsData();
+        })
+        .catch((error) => {
+          this.$message({
+            type: "error",
+            message: error,
+          });
+        });
+    },
+    addSkuForm(row) {
+      console.log(row);
+      const { id, spuName } = row;
+      this.SkuForm = {
+        visible: true,
+        title: "添加SKU",
+        spuName,
+      };
+      this.$refs.skufrom.clear();
+      this.$refs.skufrom.getData(
+        id,
+        this.category1Id,
+        this.category2Id,
+        this.category3Id
+      );
     },
     handleCurrentChange(val) {
       this.currentPageData.currentPage = val;

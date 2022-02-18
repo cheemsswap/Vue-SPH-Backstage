@@ -3,7 +3,12 @@ import {
     reqgetTrademarkList,
     reqgetbaseSaleAttrList,
     reqgetSpuById,
-    reqgetspuImageList
+    reqgetspuImageList,
+    reqsaveSpuInfo,
+    requpdateSpuInfo,
+    reqdeleteSpuInfo,
+    reqspuSaleAttrList,
+    reqattrInfoList,
 } from '@/api/product/spu'
 
 
@@ -69,6 +74,61 @@ const actions = {
             reqgetspuImageList({ spuId })
                 .then(response => {
                     resolve(response.data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    reqsaveSpuInfo({ commit }, req) {
+        return new Promise((resolve, reject) => {
+            reqsaveSpuInfo(req)
+                .then(data => {
+                    resolve(data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    requpdateSpuInfo({ commit }, req) {
+        return new Promise((resolve, reject) => {
+            requpdateSpuInfo(req)
+                .then(data => {
+                    resolve(data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    reqdeleteSpuInfo({ commit }, { spuId }) {
+        return new Promise((resolve, reject) => {
+            reqdeleteSpuInfo({ spuId })
+                .then(data => {
+                    resolve(data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    reqspuSaleAttrList({ commit }, { spuId }) {
+        return new Promise((resolve, reject) => {
+            reqspuSaleAttrList({ spuId })
+                .then(data => {
+                    resolve(data.data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
+    reqattrInfoList({ commit }, { category1Id, category2Id, category3Id }) {
+        return new Promise((resolve, reject) => {
+            reqattrInfoList({ category1Id, category2Id, category3Id })
+                .then(data => {
+                    resolve(data.data)
                 })
                 .catch(error => {
                     reject(error)

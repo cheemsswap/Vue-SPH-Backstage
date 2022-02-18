@@ -326,8 +326,78 @@ export default {
     },
     saveSpuForm() {
       //保存
-      console.log("正在保存");
-      this.clear();
+      let spuImageList = [];
+      for (const iterator of this.form.spuImageList) {
+        if (iterator.response)
+          spuImageList.push({ imgUrl: iterator.response.data });
+      }
+      let spuSaleAttrList = [];
+      for (const key in this.form.spuSaleAttrList) {
+        let spuSaleAttrValueList = [];
+        if (!this.form.spuSaleAttrList[key]) continue;
+        let saleAttrName = this.form.spuSaleAttrList[key].saleAttrName;
+        for (const x of this.form.spuSaleAttrList[key].spuSaleAttrValueList) {
+          spuSaleAttrValueList.push({
+            baseSaleAttrId: key + 1,
+            saleAttrName: saleAttrName,
+            saleAttrValueName: x.saleAttrValueName,
+          });
+        }
+        spuSaleAttrList.push({
+          baseSaleAttrId: key + 1,
+          saleAttrName: saleAttrName,
+          spuSaleAttrValueList: spuSaleAttrValueList,
+        });
+      }
+      let req = {
+        category3Id: this.category3Id,
+        description: this.form.description,
+        spuImageList: spuImageList,
+        spuName: this.form.spuName,
+        spuSaleAttrList: spuSaleAttrList,
+        tmId: this.form.tmId,
+      };
+      if (this.id) {
+        req = {
+          ...req,
+          id: this.id,
+        };
+        this.$store
+          .dispatch("spu/requpdateSpuInfo", req)
+          .then((data) => {
+            this.$message({
+              type: "success",
+              message: "操作成功",
+            });
+            this.clear();
+            this.$emit("update:visible", false);
+            this.$emit("getrecordsData");
+          })
+          .catch((error) => {
+            this.$message({
+              type: "error",
+              message: error,
+            });
+          });
+      } else {
+        this.$store
+          .dispatch("spu/reqsaveSpuInfo", req)
+          .then((data) => {
+            this.$message({
+              type: "success",
+              message: "操作成功",
+            });
+            this.clear();
+            this.$emit("update:visible", false);
+            this.$emit("getrecordsData");
+          })
+          .catch((error) => {
+            this.$message({
+              type: "error",
+              message: error,
+            });
+          });
+      }
     },
   },
 };

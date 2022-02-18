@@ -45,3 +45,51 @@ export function reqgetspuImageList({ spuId }) {
         method: "get"
     })
 }
+
+//添加 SPU
+//POST /admin/product/saveSpuInfo
+export function reqsaveSpuInfo(req) {
+    return request({
+        method: "post",
+        url: `/admin/product/saveSpuInfo`,
+        data: req
+    })
+}
+
+//修改 SPU
+// POST /admin/product/updateSpuInfo
+export function requpdateSpuInfo(req) {
+    return request({
+        method: "post",
+        url: `/admin/product/updateSpuInfo`,
+        data: req
+    })
+}
+
+//删除 SPU
+// DELETE /admin/product/deleteSpu/{spuId}
+export function reqdeleteSpuInfo({ spuId }) {
+    return request({
+        method: "delete",
+        url: `/admin/product/deleteSpu/${spuId}`,
+    })
+}
+
+//获取指定SPU的销售属性数据
+// GET /admin/product/spuSaleAttrList/{spuId}
+export function reqspuSaleAttrList({ spuId }) {
+    return request({
+        method: "get",
+        url: `/admin/product/spuSaleAttrList/${spuId}`,
+    })
+}
+
+//获取平台属性数据
+// GET /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
+export function reqattrInfoList({ category1Id, category2Id, category3Id }) {
+    return request({
+        method: "get",
+        url: `/admin/product/attrInfoList/${category1Id}/${category2Id}/${category3Id}`,
+    })
+}
+
