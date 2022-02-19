@@ -3348,3 +3348,151 @@
             }
         }
 ```
+### 第六十六步:添加API  产品管理-Spu管理  -> 保存Sku信息
+
+```bash
+    ---api
+        ---product
+            ---spu.js
+        核心代码:
+        //保存Sku信息
+        // POST /admin/product/saveSkuInfo
+        export function reqsaveSkuInfo(req) {
+            return request({
+                method: "post",
+                url: `/admin/product/saveSkuInfo`,
+                data: req
+            })
+        }
+```
+### 第六十七步:产品管理->Spu管理 使用Vux  增加方法:保存Sku信息
+
+```bash
+    ---store
+        ---modules
+            ---product
+                ---spu.js
+        核心代码:
+        action={
+            reqsaveSkuInfo({ commit }, req) {
+                return new Promise((resolve, reject) => {
+                    reqsaveSkuInfo(req)
+                        .then(data => {
+                            resolve(data.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            }
+        }
+```
+### 第六十八步:对SkuForm进行加工 增加保存按钮的表单验证
+
+```bash
+    ---viwes
+        ---product
+            ---Spu
+                ---SkuForm
+                    ---index.vue
+        核心代码:
+        data() {
+            var validateSkuName = (rule, value, callback) => {
+            if (value && value != "") {
+                callback();
+            } else {
+                callback(new Error("SKU名称是必填选项"));
+            }
+            }
+            return {
+                rules: {
+                skuName:{ [
+                    { required: true, trigger: "change", validator: validateSkuName },
+                ],
+                }
+            }
+        }
+        methods: {
+            saveSkuForm() {
+                //增加表单验证
+                this.$refs.form.validate((valid) => {
+                    if (valid) {
+                        //封装json
+                        let skuImageList = [];
+                        let skuDefaultImg = "";
+                        for (const iterator of this.form.ImageList) {
+                            if (iterator.isDefault) {
+                                skuDefaultImg = iterator.imgUrl;
+                            }
+                            if (iterator.isSelect) {
+                                skuImageList.push({
+                                    imgUrl: iterator.imgUrl,
+                                    isDefault: iterator.isDefault,
+                                    imgName: iterator.imgName,
+                                    spuImgId: iterator.id,
+                                });
+                            }
+                        }
+                        let skuSaleAttrValueList = [];
+                        for (const iterator of this.form.SaleAttrList) {
+                            if (iterator.isSelect != "") {
+                                let id = "";
+                                for (const x of iterator.spuSaleAttrValueList) {
+                                    if (x.saleAttrValueName == iterator.isSelect) {
+                                        id = x.id;
+                                        break;
+                                    }
+                                }
+                                skuSaleAttrValueList.push({
+                                    saleAttrId: iterator.id,
+                                    saleAttrValueId: id,
+                                });
+                            }
+                        }
+                        let skuAttrValueList = [];
+                        for (const iterator of this.form.AttrInfoList) {
+                            if (iterator.isSelect != "") {
+                                let id = "";
+                                for (const x of iterator.attrValueList) {
+                                    if (x.valueName == iterator.isSelect) {
+                                        id = x.id;
+                                        break;
+                                    }
+                                }
+                                skuAttrValueList.push({
+                                    valueId: id,
+                                    attrId: iterator.id,
+                                });
+                            }
+                        }
+                        const req = {
+                            category3Id: this.form.category3Id,
+                            price: this.form.price,
+                            skuAttrValueList,
+                            skuImageList,
+                            skuSaleAttrValueList,
+                            skuDefaultImg,
+                            skuDesc: this.form.skuDescribe,
+                            skuName: this.form.skuName,
+                            weight: this.form.skuWeight,
+                        };
+                        this.$store
+                        .dispatch("spu/reqsaveSkuInfo", req)
+                        .then((data) => {
+                            this.$message({
+                                type: "success",
+                                message: "添加成功",
+                            });
+                            this.$emit("update:visible", false);
+                        })
+                        .catch((error) => {
+                            this.$message({
+                                type: "error",
+                                message: error,
+                            });
+                        });
+                    }
+                });
+            }
+        }
+```

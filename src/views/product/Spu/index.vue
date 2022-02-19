@@ -34,6 +34,7 @@
               type="info"
               icon="el-icon-view"
               title="查看"
+              @click="SeeSkuList(scope.row)"
             ></HintButtom>
             <el-popconfirm
               confirm-button-text="好的"
@@ -76,6 +77,13 @@
       :visible.sync="SkuForm.visible"
       ref="skufrom"
     />
+    <el-dialog
+      title="SKU列表"
+      :visible.sync="centerDialogVisible"
+      width="30%"
+      center
+    >
+    </el-dialog>
   </div>
 </template>
 
@@ -114,6 +122,7 @@ export default {
       },
       recordsData: [],
       loading: false,
+      centerDialogVisible: false,
     };
   },
   components: {
@@ -207,7 +216,7 @@ export default {
         });
     },
     addSkuForm(row) {
-      console.log(row);
+      // console.log(row);
       const { id, spuName } = row;
       this.SkuForm = {
         visible: true,
@@ -225,6 +234,10 @@ export default {
     handleCurrentChange(val) {
       this.currentPageData.currentPage = val;
       this.getrecordsData();
+    },
+    SeeSkuList(row) {
+      console.log(row);
+      this.centerDialogVisible = true;
     },
   },
 };

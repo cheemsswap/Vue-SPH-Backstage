@@ -9,6 +9,7 @@ import {
     reqdeleteSpuInfo,
     reqspuSaleAttrList,
     reqattrInfoList,
+    reqsaveSkuInfo
 } from '@/api/product/spu'
 
 
@@ -135,6 +136,17 @@ const actions = {
                 })
         })
     },
+    reqsaveSkuInfo({ commit }, req) {
+        return new Promise((resolve, reject) => {
+            reqsaveSkuInfo(req)
+                .then(data => {
+                    resolve(data.data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    }
 }
 
 export default {

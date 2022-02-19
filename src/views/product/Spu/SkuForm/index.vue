@@ -1,10 +1,10 @@
 <template>
   <el-dialog v-bind="$attrs" v-on="$listeners">
-    <el-form v-model="form">
+    <el-form :model="form" :rules="rules" ref="form">
       <el-form-item label="SPU名称" label-width="120px">
         <el-input disabled v-model="form.spuName" />
       </el-form-item>
-      <el-form-item label="SKU名称" label-width="120px">
+      <el-form-item prop="skuName" label="SKU名称" label-width="120px">
         <el-input v-model="form.skuName" />
       </el-form-item>
       <el-form-item label="价格(元)" label-width="120px">
@@ -90,7 +90,7 @@
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button @click="$emit('update:visible', false)">取 消</el-button>
-      <el-button type="primary">确 定</el-button>
+      <el-button type="primary" @click="saveSkuForm">确 定</el-button>
     </div>
   </el-dialog>
 </template>
@@ -100,6 +100,13 @@ import { nanoid } from "nanoid";
 export default {
   name: "SkuForm",
   data() {
+    var validateSkuName = (rule, value, callback) => {
+      if (value && value != "") {
+        callback();
+      } else {
+        callback(new Error("SKU名称是必填选项"));
+      }
+    };
     return {
       form: {
         ImageList: [],
@@ -110,8 +117,14 @@ export default {
         skuPrice: "",
         skuWeight: "",
         skuDescribe: "",
+        category3Id: "",
       },
       multipleSelection: [],
+      rules: {
+        skuName: [
+          { required: true, trigger: "change", validator: validateSkuName },
+        ],
+      },
     };
   },
   watch: {
@@ -121,6 +134,87 @@ export default {
   },
   props: ["spuName"],
   methods: {
+    saveSkuForm() {
+      //增加表单验证
+      this.$refs.form.validate((valid) => {
+        if (valid) {
+          //封装json
+          let skuImageList = [];
+          let skuDefaultImg = "";
+          for (const iterator of this.form.ImageList) {
+            if (iterator.isDefault) {
+              skuDefaultImg = iterator.imgUrl;
+            }
+            if (iterator.isSelect) {
+              skuImageList.push({
+                imgUrl: iterator.imgUrl,
+                isDefault: iterator.isDefault,
+                imgName: iterator.imgName,
+                spuImgId: iterator.id,
+              });
+            }
+          }
+          let skuSaleAttrValueList = [];
+          for (const iterator of this.form.SaleAttrList) {
+            if (iterator.isSelect != "") {
+              let id = "";
+              for (const x of iterator.spuSaleAttrValueList) {
+                if (x.saleAttrValueName == iterator.isSelect) {
+                  id = x.id;
+                  break;
+                }
+              }
+              skuSaleAttrValueList.push({
+                saleAttrId: iterator.id,
+                saleAttrValueId: id,
+              });
+            }
+          }
+          let skuAttrValueList = [];
+          for (const iterator of this.form.AttrInfoList) {
+            if (iterator.isSelect != "") {
+              let id = "";
+              for (const x of iterator.attrValueList) {
+                if (x.valueName == iterator.isSelect) {
+                  id = x.id;
+                  break;
+                }
+              }
+              skuAttrValueList.push({
+                valueId: id,
+                attrId: iterator.id,
+              });
+            }
+          }
+          const req = {
+            category3Id: this.form.category3Id,
+            price: this.form.price,
+            skuAttrValueList,
+            skuImageList,
+            skuSaleAttrValueList,
+            skuDefaultImg,
+            skuDesc: this.form.skuDescribe,
+            skuName: this.form.skuName,
+            weight: this.form.skuWeight,
+          };
+          this.$store
+            .dispatch("spu/reqsaveSkuInfo", req)
+            .then((data) => {
+              this.$message({
+                type: "success",
+                message: "添加成功",
+              });
+              this.$emit("update:visible", false);
+            })
+            .catch((error) => {
+              this.$message({
+                type: "error",
+                message: error,
+              });
+            });
+        }
+      });
+    },
     handleSelectionChange(val) {
       this.form.ImageList.forEach((e) => {
         let flag = true;
@@ -170,6 +264,8 @@ export default {
       };
     },
     async getData(id, category1Id, category2Id, category3Id) {
+      this.$refs.form && this.$refs.form.resetFields();
+      this.form.category3Id = category3Id;
       this.form.ImageList = await this.getImageList(id);
       this.form.SaleAttrList = await this.getSaleAttrList(id);
       this.form.AttrInfoList = await this.getAttrInfoList(

@@ -93,3 +93,12 @@ export function reqattrInfoList({ category1Id, category2Id, category3Id }) {
     })
 }
 
+//保存Sku信息
+// POST /admin/product/saveSkuInfo
+export function reqsaveSkuInfo(req) {
+    return request({
+        method: "post",
+        url: `/admin/product/saveSkuInfo`,
+        data: req
+    })
+}
