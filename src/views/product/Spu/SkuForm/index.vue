@@ -2,7 +2,7 @@
   <el-dialog v-bind="$attrs" v-on="$listeners">
     <el-form :model="form" :rules="rules" ref="form">
       <el-form-item label="SPU名称" label-width="120px">
-        <el-input disabled v-model="form.spuName" />
+        <el-input disabled v-model="spuName" />
       </el-form-item>
       <el-form-item prop="skuName" label="SKU名称" label-width="120px">
         <el-input v-model="form.skuName" />
@@ -112,7 +112,6 @@ export default {
         ImageList: [],
         SaleAttrList: [],
         AttrInfoList: [],
-        spuName: this.spuName,
         skuName: "",
         skuPrice: "",
         skuWeight: "",
@@ -127,12 +126,7 @@ export default {
       },
     };
   },
-  watch: {
-    spuName() {
-      this.form.spuName = this.spuName;
-    },
-  },
-  props: ["spuName"],
+  props: ["spuName", "spuId"],
   methods: {
     saveSkuForm() {
       //增加表单验证
@@ -187,6 +181,7 @@ export default {
             }
           }
           const req = {
+            spuId: this.spuId,
             category3Id: this.form.category3Id,
             price: this.form.price,
             skuAttrValueList,

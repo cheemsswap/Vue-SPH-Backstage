@@ -9,7 +9,8 @@ import {
     reqdeleteSpuInfo,
     reqspuSaleAttrList,
     reqattrInfoList,
-    reqsaveSkuInfo
+    reqsaveSkuInfo,
+    reqfindBySpuId
 } from '@/api/product/spu'
 
 
@@ -146,7 +147,18 @@ const actions = {
                     reject(error)
                 })
         })
-    }
+    },
+    reqfindBySpuId({ commit }, { spuId }) {
+        return new Promise((resolve, reject) => {
+            reqfindBySpuId({ spuId })
+                .then(data => {
+                    resolve(data.data)
+                })
+                .catch(error => {
+                    reject(error)
+                })
+        })
+    },
 }
 
 export default {

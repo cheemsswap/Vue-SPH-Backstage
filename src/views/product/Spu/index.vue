@@ -80,9 +80,26 @@
     <el-dialog
       title="SKU列表"
       :visible.sync="centerDialogVisible"
-      width="30%"
+      width="60%"
       center
     >
+      <el-table :data="SkuList" border style="width: 100%">
+        <el-table-column prop="id" label="id" width="80"> </el-table-column>
+        <el-table-column prop="skuName" label="名称" width="180">
+        </el-table-column>
+        <el-table-column prop="price" label="价格"> </el-table-column>
+        <el-table-column prop="weight" label="重量"> </el-table-column>
+        <el-table-column prop="isSale" label="正在销售"> </el-table-column>
+        <el-table-column prop="skuDefaultImg" label="图片">
+          <template slot-scope="scope">
+            <el-image
+              style="width: 100px; height: 100px"
+              :src="scope.row.skuDefaultImg"
+              lazy
+            ></el-image>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-dialog>
   </div>
 </template>
@@ -123,6 +140,7 @@ export default {
       recordsData: [],
       loading: false,
       centerDialogVisible: false,
+      SkuList: [],
     };
   },
   components: {
@@ -222,6 +240,7 @@ export default {
         visible: true,
         title: "添加SKU",
         spuName,
+        spuId: id,
       };
       this.$refs.skufrom.clear();
       this.$refs.skufrom.getData(
@@ -236,8 +255,19 @@ export default {
       this.getrecordsData();
     },
     SeeSkuList(row) {
-      console.log(row);
-      this.centerDialogVisible = true;
+      const { id } = row;
+      this.$store
+        .dispatch("spu/reqfindBySpuId", { spuId: id })
+        .then((data) => {
+          this.SkuList = data;
+          this.centerDialogVisible = true;
+        })
+        .catch((error) => {
+          this.$message({
+            type: "error",
+            message: error,
+          });
+        });
     },
   },
 };

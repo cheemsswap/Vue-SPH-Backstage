@@ -3496,3 +3496,96 @@
             }
         }
 ```
+### 第六十九步:添加API  产品管理-Spu管理  -> 获取SKU列表信息
+
+```bash
+    ---api
+        ---product
+            ---spu.js
+        核心代码:
+        //获取SKU列表信息
+        // GET /admin/product/findBySpuId/{spuId}
+        export function reqfindBySpuId({ spuId }) {
+            return request({
+                method: "get",
+                url: `/admin/product/findBySpuId/${spuId}`,
+            })
+        }
+```
+### 第七十步:产品管理->Spu管理 使用Vux  增加方法:获取SKU列表信息
+
+```bash
+    ---store
+        ---modules
+            ---product
+                ---spu.js
+        核心代码:
+        action:{
+            reqfindBySpuId({ commit }, { spuId }) {
+                return new Promise((resolve, reject) => {
+                    reqfindBySpuId({ spuId })
+                        .then(data => {
+                            resolve(data.data)
+                        })
+                        .catch(error => {
+                            reject(error)
+                        })
+                })
+            }
+        }
+```
+### 第七十一步:Spu模块 增加查看Sku列表信息 
+
+```bash
+    ---views
+        ---product
+            ---Spu
+                ---index.vue
+        核心代码:
+        <el-dialog
+        title="SKU列表"
+        :visible.sync="centerDialogVisible"
+        width="60%"
+        center
+        >
+            <el-table :data="SkuList" border style="width: 100%">
+                <el-table-column prop="id" label="id" width="80"> </el-table-column>
+                <el-table-column prop="skuName" label="名称" width="180">
+                </el-table-column>
+                <el-table-column prop="price" label="价格"> </el-table-column>
+                <el-table-column prop="weight" label="重量"> </el-table-column>
+                <el-table-column prop="isSale" label="正在销售"> </el-table-column>
+                <el-table-column prop="skuDefaultImg" label="图片">
+                    <template slot-scope="scope">
+                        <el-image
+                            style="width: 100px; height: 100px"
+                            :src="scope.row.skuDefaultImg"
+                            lazy
+                        ></el-image>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+        data(){
+            return {
+                SkuList: []
+            }
+        }
+        methods:{
+            SeeSkuList(row) {
+                const { id } = row;
+                this.$store
+                .dispatch("spu/reqfindBySpuId", { spuId: id })
+                .then((data) => {
+                    this.SkuList = data;
+                    this.centerDialogVisible = true;
+                })
+                .catch((error) => {
+                    this.$message({
+                        type: "error",
+                        message: error,
+                    });
+                });
+            }
+        }
+```

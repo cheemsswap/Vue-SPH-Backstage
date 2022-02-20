@@ -102,3 +102,13 @@ export function reqsaveSkuInfo(req) {
         data: req
     })
 }
+
+//获取SKU列表信息
+// GET /admin/product/findBySpuId/{spuId}
+export function reqfindBySpuId({ spuId }) {
+    return request({
+        method: "get",
+        url: `/admin/product/findBySpuId/${spuId}`,
+    })
+}
+
