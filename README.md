@@ -7,8 +7,10 @@
     npm i
     3、第三步启动
     npm run serve
-
 </pre>
+# 效果图
+![image](https://github.com/cheemsswap/Vue-SPH-Backstage/releases/download/Vue-SPH-Backstage/default.png)
+
 ### 第一步：分析模板目录结构
 
 ```bash
